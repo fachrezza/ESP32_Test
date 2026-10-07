@@ -73,6 +73,25 @@
             margin-top: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0;
             font-size: 13px; color: #64748b; overflow-wrap: anywhere;
         }
+
+        .flash {
+            padding: 12px 16px; border-radius: 10px; margin-bottom: 16px;
+            font-size: 14px; font-weight: 600;
+        }
+        .flash.ok { background: #dcfce7; color: #15803d; }
+        .flash.err { background: #fee2e2; color: #b91c1c; }
+
+        .btn {
+            display: block; width: 100%; margin-top: 16px;
+            padding: 11px 16px; border: 0; border-radius: 10px;
+            font-size: 14px; font-weight: 700; color: #fff;
+            cursor: pointer; transition: filter .2s, opacity .2s;
+        }
+        .btn:hover:not(:disabled) { filter: brightness(1.08); }
+        .btn:disabled { opacity: .55; cursor: not-allowed; }
+        .btn-on { background: #16a34a; }
+        .btn-off { background: #dc2626; }
+
         .empty { color: #64748b; }
     </style>
 

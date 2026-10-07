@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\StatusMesin;
 use App\Models\EspMapping;
+use App\Models\Mesin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -19,10 +20,10 @@ class EspKoneksiTest extends TestCase
         parent::setUp();
 
         $this->esp = EspMapping::create([
-            'id_esp'      => '9C12B8F23A08',
+            'id_esp' => '9C12B8F23A08',
             'mac_address' => '08:3A:F2:B8:12:9C',
-            'kode_mesin'  => 1,
-            'nama_mesin'  => 'AC',
+            'kode_mesin' => 1,
+            'nama_mesin' => 'AC',
         ]);
     }
 
@@ -57,6 +58,53 @@ class EspKoneksiTest extends TestCase
         $this->postJson('/api/esp/ping', [], ['X-ESP-ID' => 'AABBCCDDEEFF'])->assertNotFound();
 
         $this->assertNull($this->esp->fresh()->last_seen_at);
+    }
+
+    public function test_state_mengembalikan_nama_status_dan_timer_untuk_polling_esp(): void
+    {
+        $this->postJson('/api/esp/status', ['status' => 'RUNNING'], ['X-ESP-ID' => '9C12B8F23A08'])
+            ->assertOk();
+
+        $this->getJson('/api/esp/state?id_esp=9C12B8F23A08')
+            ->assertOk()
+            ->assertJsonPath('esp.nama_mesin', 'AC')
+            ->assertJsonPath('esp.status', 'RUNNING')
+            ->assertJsonPath('esp.kode_mesin', 1);
+    }
+
+    public function test_timer_state_diambil_dari_backend_bukan_dihitung_lokal(): void
+    {
+        $this->freezeSecond();
+        $this->postJson('/api/esp/status', ['status' => 'SETTER'], ['X-ESP-ID' => '9C12B8F23A08']);
+
+        $this->travel(7)->seconds();
+
+        $this->getJson('/api/esp/state?id_esp=9C12B8F23A08')
+            ->assertOk()
+            ->assertJsonPath('esp.timer_sec', 7)
+            ->assertJsonPath('esp.durasi_status_sec', 7);
+    }
+
+    public function test_state_dari_esp_tidak_terdaftar_ditolak(): void
+    {
+        $this->getJson('/api/esp/state?id_esp=AABBCCDDEEFF')->assertNotFound();
+    }
+
+    public function test_state_mengambil_nama_dari_tabel_mesin(): void
+    {
+        Mesin::create(['uid' => '1001', 'nama' => 'Monitor Baru', 'nomor' => 1]);
+
+        $this->getJson('/api/esp/state?id_esp=9C12B8F23A08')
+            ->assertOk()
+            ->assertJsonPath('esp.nama_mesin', 'Monitor Baru')
+            ->assertJsonPath('esp.kode_mesin', 1);
+    }
+
+    public function test_state_pakai_nama_esp_bila_tabel_mesin_kosong(): void
+    {
+        $this->getJson('/api/esp/state?id_esp=9C12B8F23A08')
+            ->assertOk()
+            ->assertJsonPath('esp.nama_mesin', 'AC');
     }
 
     public function test_esp_dianggap_terputus_setelah_batas_waktu(): void

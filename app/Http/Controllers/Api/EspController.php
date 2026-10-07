@@ -25,8 +25,27 @@ class EspController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Terhubung sebagai {$esp->nama_mesin}",
-            'esp'     => $this->infoEsp($esp),
+            'message' => "Terhubung sebagai {$esp->namaUntukTampilan()}",
+            'esp' => $this->infoEsp($esp),
+        ]);
+    }
+
+    /**
+     * GET /api/esp/state   (header X-ESP-ID, atau ?id_esp=ESP32_01)
+     * Dipakai ESP32 untuk polling: mengembalikan nama_mesin, status, dan timer_sec
+     * sebagai satu-satunya sumber kebenaran untuk tampilan di perangkat.
+     */
+    public function state(Request $request): JsonResponse
+    {
+        $esp = $this->espDariRequest($request);
+
+        if (! $esp) {
+            return $this->belumTerdaftar();
+        }
+
+        return response()->json([
+            'success' => true,
+            'esp' => $this->infoEsp($esp),
         ]);
     }
 
@@ -52,15 +71,15 @@ class EspController extends Controller
         // Klik tombol yang sama berulang kali tidak me-reset timer
         if ($esp->status !== $statusBaru) {
             $esp->update([
-                'status'       => $statusBaru,
+                'status' => $statusBaru,
                 'status_since' => now(),
             ]);
         }
 
         return response()->json([
             'success' => true,
-            'message' => "{$esp->nama_mesin} sekarang {$statusBaru->value}",
-            'esp'     => $this->infoEsp($esp),
+            'message' => "{$esp->namaUntukTampilan()} sekarang {$statusBaru->value}",
+            'esp' => $this->infoEsp($esp),
         ]);
     }
 
@@ -72,13 +91,13 @@ class EspController extends Controller
     private function infoEsp(EspMapping $esp): array
     {
         return [
-            'id_esp'            => $esp->id_esp,
-            'mac_address'       => $esp->mac_address,
-            'kode_mesin'        => $esp->kode_mesin,
-            'nama_mesin'        => $esp->nama_mesin,
-            'status'            => $esp->status?->value,
+            'id_esp' => $esp->id_esp,
+            'mac_address' => $esp->mac_address,
+            'kode_mesin' => $esp->kode_mesin,
+            'nama_mesin' => $esp->namaUntukTampilan(),
+            'status' => $esp->status?->value,
             'durasi_status_sec' => $esp->durasiStatus(),
-            'timer_sec'         => $esp->timer_sec,
+            'timer_sec' => $esp->timer_sec,
         ];
     }
 

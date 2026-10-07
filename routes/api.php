@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 // Semua request dari ESP32 dicatat koneksinya lewat header X-ESP-ID
 Route::middleware(CatatKoneksiEsp::class)->group(function () {
     Route::post('esp/ping', [EspController::class, 'ping']);
+    Route::get('esp/state', [EspController::class, 'state']);
     Route::post('esp/status', [EspController::class, 'status']);
 
     Route::prefix('kontrol-mesin')->group(function () {
